@@ -1,0 +1,69 @@
+<div class="container">
+  <div class="heading">
+    <h3 class="knowledge-secondary_heading">Log In</h3>
+    <p class="knowledge-typography">
+      Enter your username and password to Login
+    </p>
+  </div>
+  <form [formGroup]="form">
+    <div class="input">
+      <mat-label
+        [ngClass]="{ error: hasError('username') }"
+        class="knowledge-label"
+      >
+        Username *
+      </mat-label>
+      <mat-form-field>
+        <input
+          class="knowledge-input"
+          matInput
+          type="email"
+          formControlName="username"
+          placeholder="Enter Username"
+        />
+        @if(hasError('username')) {
+        <mat-error>{{ errorMsg("username", "Username") }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <div class="input">
+      <mat-label
+        [ngClass]="{ error: hasError('password') }"
+        class="knowledge-label"
+      >
+        Password *
+      </mat-label>
+      <mat-form-field>
+        <input
+          class="knowledge-input"
+          matInput
+          [type]="showPassword ? 'text' : 'password'"
+          formControlName="password"
+          placeholder="Enter Password"
+        />
+
+        <mat-icon
+          (click)="showPassword = !showPassword"
+          matIconSuffix
+          svgIcon="eye"
+        ></mat-icon>
+        @if(hasError('password')) {
+        <mat-error>{{ errorMsg("password", "Password") }}</mat-error>
+        }
+      </mat-form-field>
+    </div>
+    <div class="button-container">
+      <div class="error-main" *ngIf="loginFail">Wrong Id or Password</div>
+      <button
+        id="login"
+        mat-button
+        class="knowledge-button"
+        [disabled]="form.invalid"
+        type="submit"
+        (click)="logIn()"
+      >
+        LogIn
+      </button>
+    </div>
+  </form>
+</div>

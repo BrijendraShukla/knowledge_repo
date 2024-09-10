@@ -1,0 +1,119 @@
+<div class="container">
+  <header>
+    <div class="heading">Filter</div>
+    <button
+      mat-button
+      (click)="form.reset()"
+      class="knowledge-button"
+      type="button"
+    >
+      Reset
+    </button>
+  </header>
+  <form [formGroup]="form">
+    @if (this.tags) {
+    <mat-form-field>
+      <input
+        #tagInput
+        class="knowledge-input"
+        matInput
+        type="text"
+        placeholder="Add Tags"
+      />
+      <button
+        [disabled]="tagInput.value.trim().length < 1"
+        (click)="addTag(tagInput)"
+        type="button"
+        mat-icon-button
+        matIconSuffix
+      >
+        <mat-icon svgIcon="add"></mat-icon>
+      </button>
+    </mat-form-field>
+    } @if (showCalander) {
+    <mat-form-field>
+      <mat-date-range-input class="knowledge-input" [rangePicker]="picker">
+        <input
+          matStartDate
+          placeholder="Start date"
+          formControlName="date_range_after"
+        />
+        <input
+          matEndDate
+          placeholder="End date"
+          formControlName="date_range_before"
+        />
+      </mat-date-range-input>
+
+      <mat-datepicker-toggle matIconSuffix [for]="picker"
+        ><mat-icon matDatepickerToggleIcon
+          >arrow_drop_down</mat-icon
+        ></mat-datepicker-toggle
+      >
+      <mat-date-range-picker
+        (closed)="onPickerClosed()"
+        #picker
+      ></mat-date-range-picker>
+    </mat-form-field>
+    } @else {
+    <mat-form-field>
+      <mat-select
+        hideSingleSelectionIndicator="true"
+        formControlName="date"
+        class="knowledge-input"
+        placeholder="Date"
+        (valueChange)="dateSelect($event)"
+      >
+        <mat-option value="last week">last week</mat-option>
+        <mat-option value="last month">last month</mat-option>
+        @for (dateRange of previousSelectedDateRange; track $index) {
+        <mat-option
+          [value]="
+            dateRange.date_range_after.toLocaleDateString() +
+            '-' +
+            dateRange.date_range_before.toLocaleDateString()
+          "
+          >{{
+            dateRange.date_range_after.toLocaleDateString() +
+              " - " +
+              dateRange.date_range_before.toLocaleDateString()
+          }}</mat-option
+        >
+        }
+        <mat-option value="Custom">Custom</mat-option>
+      </mat-select>
+    </mat-form-field>
+    }
+    <mat-form-field>
+      <mat-select
+        formControlName="file_type"
+        class="knowledge-input"
+        placeholder="File Type"
+      >
+        @for (fileType of fileTypes$ | async; track $index) {
+        <mat-option [value]="fileType">{{ fileType }}</mat-option
+        >}
+      </mat-select>
+    </mat-form-field>
+    <mat-form-field>
+      <mat-select
+        formControlName="document_type"
+        class="knowledge-input"
+        placeholder="Document Type"
+      >
+        @for (documentType of documentType$ | async; track $index) {
+        <mat-option [value]="documentType">{{ documentType }}</mat-option
+        >}
+      </mat-select>
+    </mat-form-field>
+    <app-autocomplete-multiselect
+      actualControlName="industry"
+      displayControlName="industryDisplay"
+      [formGroup]="form"
+      placeHolder="Industry"
+      [list]="industries"
+      [showError]="false"
+      [showLabel]="false"
+    ></app-autocomplete-multiselect>
+  </form>
+</div>

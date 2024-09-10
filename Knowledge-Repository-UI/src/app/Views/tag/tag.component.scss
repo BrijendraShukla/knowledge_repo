@@ -1,0 +1,30 @@
+:host {
+  height: 30px;
+  flex-grow: 0;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px 6px 12px;
+  border-radius: 4px;
+  background-color: #d1f5ea;
+  .name {
+    font-family: "IBM Plex Sans";
+    font-size: 14px;
+    font-weight: 500;
+    font-stretch: normal;
+    font-style: normal;
+    line-height: 1.29;
+    letter-spacing: normal;
+    text-align: left;
+    color: #13294b;
+  }
+  ::ng-deep {
+    .mat-mdc-icon-button.mat-mdc-button-base {
+      width: 26px;
+      height: 26px;
+      padding: 1px;
+      margin: 5px 6px 7px 6px;
+    }
+  }
+}

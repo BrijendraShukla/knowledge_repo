@@ -1,0 +1,13 @@
+@if (showLoader) {
+<mat-spinner class="loader"></mat-spinner>
+}
+<div [class.disable-with-spinner]="showLoader" class="container">
+  <app-header [activeUrl]="activeUrl"></app-header>
+  <app-sidenav [activeUrl]="activeUrl"></app-sidenav>
+  <app-toaster></app-toaster>
+  <main (click)="hideSideNav()" class="main">
+    <div [class.disable-with-spinner]="userStore.showSideNav$ | async">
+      <router-outlet></router-outlet>
+    </div>
+  </main>
+</div>

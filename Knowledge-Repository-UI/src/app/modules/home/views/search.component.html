@@ -1,0 +1,159 @@
+<div class="container">
+  @if (!searchDone) {
+  <div class="heading">How can I help You?</div>
+  <form class="pre-search-form">
+    <mat-form-field class="knowledge-field">
+      <input
+        #searchInput
+        name="search"
+        class="knowledge-input elipse-input"
+        matInput
+        type="text"
+        [(ngModel)]="searchValue"
+        placeholder="Search..."
+      />
+      <mat-icon matIconPrefix svgIcon="search"></mat-icon>
+    </mat-form-field>
+    <button
+      type="submit"
+      (click)="search($event)"
+      [disabled]="searchInput.value.trim().length < 1"
+      mat-button
+      class="knowledge-button"
+    >
+      Search
+    </button>
+  </form>
+  } @else {
+  <div class="after-search" [class.search-animation]="showAnimation">
+    <form class="post-search-form">
+      <mat-form-field class="knowledge-field">
+        <input
+          #searchInput
+          name="search"
+          class="knowledge-input elipse-input"
+          matInput
+          type="text"
+          [(ngModel)]="searchValue"
+          placeholder="Search..."
+        />
+        <mat-icon matIconPrefix svgIcon="search"></mat-icon>
+        <button
+          matIconSuffix
+          type="button"
+          (click)="searchValue = ''"
+          [disabled]="!searchValue.trim().length"
+          mat-icon-button
+        >
+          <mat-icon svgIcon="close"></mat-icon>
+        </button>
+      </mat-form-field>
+      <button
+        type="submit"
+        (click)="search($event)"
+        [disabled]="searchInput.value.trim().length < 1"
+        mat-button
+        class="knowledge-button button-animation"
+      >
+        Search
+      </button>
+    </form>
+
+    @if (showMain) {
+    <main [class.main-animation]="showMainAnimation">
+      <div class="filter">
+        <app-filter [tags]="true" (formAction)="onFilter($event)"></app-filter>
+      </div>
+
+      <div class="data-list">
+        <div class="tags">
+          @for (tag of tagList; track tag; let id=$index) {
+          <app-tag (close)="onTagClose($event)" [name]="tag" [id]="id"></app-tag
+          >} @if (checkedData.length >=1) {
+          <span (click)="downloadAll()" class="download-all">
+            Download All
+          </span>
+          }
+        </div>
+        @for (data of apiResponseData?.results ; track $index) {
+        <div class="data" (click)="openDetailDialog(data)">
+          @if (data.file_type == 'pdf') {
+
+          <img alt="pdf_icon" src="assets/images/pdf_file_icon.png" />
+          } @else if (data.file_type == 'docx') {
+          <img alt="docx_icon" src="assets/images/docx_icon.svg.png" />
+          }
+          <div class="info">
+            <div class="tags">
+              @for (industry of data.industry; track $index) {
+              <span>{{ industry }}</span>
+              } <span>{{ data.modified_at | date : "dd MMM yyyy" }}</span>
+            </div>
+            <div class="name">{{ data.name }}</div>
+            <div class="summary">{{ data.summary }}</div>
+          </div>
+          <div class="check" (click)="$event.stopImmediatePropagation()">
+            <mat-checkbox
+              (change)="onCheckChange($event, data.id)"
+              [checked]="checkedData.includes(data.id)"
+              [color]="'blue'"
+            ></mat-checkbox>
+          </div>
+        </div>
+        } @if (!apiResponseData?.results?.length) {
+        <div class="not-data">
+          <img src="/assets/images/no_data.png" alt="no_data_found" />
+          <span>No Data Found</span>
+        </div>
+        }
+      </div>
+    </main>
+    }
+  </div>
+  }
+</div>
+
+<ng-template #detailsTemplate>
+  <div class="detail-template">
+    <div class="detail-container">
+      <div class="heading">
+        {{ detailsData.name }}
+      </div>
+      <div class="file">
+        <mat-icon svgIcon="file"></mat-icon>
+        <div class="file_info">
+          <div class="file_info_name">
+            {{ detailsData.name }}
+          </div>
+          <div class="date">
+            {{ detailsData.modified_at | date : "dd MMM yy 'at' hh:mm a" }}
+          </div>
+        </div>
+      </div>
+      <div class="summary">
+        <div class="summary_heading">Summary</div>
+        {{ detailsData.summary }}
+      </div>
+    </div>
+
+    <div class="footer">
+      <button
+        *ngIf="detailsData.file_type == 'pdf'"
+        (click)="viewDownloadDocument('view')"
+        mat-button
+        type="button"
+        class="knowledge-button view"
+      >
+        View
+      </button>
+      <button
+        (click)="viewDownloadDocument('download')"
+        mat-button
+        type="button"
+        class="knowledge-button"
+      >
+        Download
+      </button>
+    </div>
+  </div>
+</ng-template>

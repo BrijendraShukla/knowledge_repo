@@ -1,0 +1,72 @@
+:host {
+  display: flex;
+  position: absolute;
+  width: 200px;
+  height: 100%;
+  top: 80px;
+  left: -200px;
+  background-color: #13294b;
+  z-index: 200;
+  justify-content: center;
+  animation-name: start;
+  animation-duration: 0.3s;
+  .container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+    padding-top: 30px;
+    div {
+      text-align: center;
+      height: 30px;
+      button {
+        justify-content: start;
+        padding-left: 39px;
+        width: 100%;
+        height: 45px;
+        .header_action_item {
+          color: #fff;
+          font-family: "Inter";
+          font-size: 18px;
+          font-style: normal;
+          font-weight: 500;
+          line-height: 24px;
+        }
+      }
+    }
+    .active {
+      color: #47d7ac !important;
+    }
+  }
+}
+::ng-deep {
+  .hide-sidenav {
+    display: none;
+    animation-name: end;
+    animation-duration: 0.3s;
+  }
+  .show-sidenav {
+    animation-name: start;
+    animation-duration: 0.3s;
+    left: 0px;
+  }
+}
+@keyframes end {
+  from {
+    left: 0px;
+    display: flex;
+  }
+  to {
+    left: -200px;
+    display: flex;
+  }
+}
+
+@keyframes start {
+  from {
+    left: -200px;
+  }
+  to {
+    left: 0px;
+  }
+}

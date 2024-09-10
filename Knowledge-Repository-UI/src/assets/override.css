@@ -1,0 +1,55 @@
+.mat-mdc-text-field-wrapper {
+  background-color: #fff !important;
+  padding: 0 12px 0 0;
+}
+.mat-mdc-form-field-infix {
+  padding: 0 !important;
+}
+.mat-mdc-form-field-flex {
+  height: 36px !important;
+}
+
+.mat-mdc-button-disabled {
+  opacity: 0.55;
+}
+.mat-mdc-progress-spinner .mdc-circular-progress__determinate-circle,
+.mat-mdc-progress-spinner .mdc-circular-progress__indeterminate-circle-graphic {
+  stroke: #47d7ac !important;
+}
+
+.mdc-tooltip__surface {
+  max-width: 400px !important;
+  max-height: none !important;
+  padding: 8px 10px !important;
+  background-color: #90e7cd !important;
+
+  font-family: "Poppins" !important;
+}
+
+.mat-column-fileName {
+  flex: 0 0 255px;
+}
+.mat-column-fileName.mat-mdc-cell {
+  display: block;
+  padding-top: 26px;
+}
+
+.mat-column-industry {
+  flex: 0 0 168px;
+}
+.mat-column-industry.mat-mdc-cell {
+  display: block;
+  padding-top: 26px;
+}
+.mat-column-tags {
+  flex: 1 0 284px;
+}
+.mat-column-fileType {
+  flex: 0 0 94px;
+}
+.mat-column-date {
+  flex: 0 0 100px;
+}
+.mat-column-action {
+  flex: 0 0 152px;
+}

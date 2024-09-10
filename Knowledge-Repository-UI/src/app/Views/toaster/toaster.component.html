@@ -1,0 +1,13 @@
+<!-- <div class="container">
+  <mat-icon svgIcon="success"></mat-icon>
+</div> -->
+@for (data of toasterData; track $index) {
+
+<div class="container">
+  <mat-icon svgIcon="success"></mat-icon>
+  <span class="msg">{{ data.msg }}</span>
+  <button type="button" (click)="close(data)" mat-icon-button>
+    <mat-icon svgIcon="close"></mat-icon>
+  </button>
+</div>
+}

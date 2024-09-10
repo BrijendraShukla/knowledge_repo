@@ -1,0 +1,29 @@
+:host {
+  display: flex;
+  width: 100%;
+  position: absolute;
+  bottom: 65px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+}
+.container {
+  padding: 12px 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 498px;
+  height: 48px;
+  border-radius: 6px;
+  border: 1px solid #47d7ac;
+  background-color: #d1f5ea;
+  .msg {
+    color: #13294b;
+    font-family: "Inter";
+    flex: 1;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 18px;
+  }
+}

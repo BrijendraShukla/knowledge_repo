@@ -1,0 +1,64 @@
+<mat-toolbar class="header">
+  <button
+    (click)="toggleSideNav()"
+    class="sideNavButton"
+    mat-icon-button
+    type="button"
+  >
+    <mat-icon>dehaze</mat-icon>
+  </button>
+  <span class="header_heading">Knowledge Repository </span
+  ><span class="header_heading_by">by</span>
+  <div class="nagarro">
+    <mat-icon class="nagarro_logo" svgIcon="nagarro-logo"></mat-icon>
+    <mat-icon class="nagarro_name" svgIcon="nagarro"></mat-icon>
+  </div>
+
+  <span class="spacer"></span>
+  @if (isLogin) {
+  <div class="header_action">
+    <button
+      type="button"
+      (click)="redirect('/')"
+      mat-button
+      class="example-icon favorite-icon"
+    >
+      <span
+        class="header_action_item"
+        [class.header_action_item_active]="activeUrl == '/'"
+        >Home</span
+      >
+    </button>
+    <button
+      type="button"
+      (click)="redirect('/content')"
+      mat-button
+      class="example-icon favorite-icon"
+    >
+      <span
+        class="header_action_item"
+        [class.header_action_item_active]="activeUrl == '/content'"
+      >
+        Add Content</span
+      >
+    </button>
+  </div>
+  <div class="spacer-2"></div>
+  <div class="profile">
+    @if (showInitials) {
+    <div class="initials">
+      <span>{{ initials }}</span>
+    </div>
+    } @else {
+    <img [src]="src" (error)="showInitials = !showInitials" />
+
+    }
+    <div class="dropdown">
+      <span class="user-name">
+        {{ user.name }}
+      </span>
+      <mat-icon class="dropdown_icon" svgIcon="dropdown"></mat-icon>
+    </div>
+  </div>
+  }
+</mat-toolbar>

@@ -1,0 +1,14 @@
+# Ignore these files and directories
+.idea/
+__pycache__/
+migrations/
+.vscode/
+venv/
+*.pyc
+*.log
+*.tmp
+*.sqlite3
+*.db
+/staticfiles/
+.env
+media/

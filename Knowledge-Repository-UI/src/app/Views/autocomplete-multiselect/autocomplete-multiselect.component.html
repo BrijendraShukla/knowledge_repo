@@ -1,0 +1,42 @@
+<form [formGroup]="formGroup">
+  @if (showLabel) {
+  <mat-label [ngClass]="{ error: hasError() }" class="knowledge-label">
+    {{ label }}{{ required ? " *" : "" }}
+  </mat-label>
+  }
+  <mat-form-field>
+    <input
+      [formControlName]="displayControlName"
+      class="knowledge-input"
+      placeholder="Industry"
+      matInput
+      (input)="industryFilter('input')"
+      (focus)="industryFilter('focus')"
+      (blur)="autocompleteClose('blur')"
+      [matAutocomplete]="auto"
+    />
+    <mat-autocomplete
+      #auto="matAutocomplete"
+      (closed)="autocompleteClose('close')"
+    >
+      @for (option of filteredList; track option) {
+      <mat-option
+        class="multiselect"
+        [value]="option"
+        [disabled]="!isChecked(option) && actualControl.value?.length >= 3"
+      >
+        <mat-checkbox
+          [checked]="isChecked(option)"
+          (click)="$event.stopPropagation()"
+          (change)="toggleIndustrySelection(option, $event)"
+        >
+          {{ option }}
+        </mat-checkbox>
+      </mat-option>
+      }
+    </mat-autocomplete>
+    @if(showError && hasError() ) {
+    <mat-error>{{ errorMsg() }}</mat-error>
+    }
+  </mat-form-field>
+</form>

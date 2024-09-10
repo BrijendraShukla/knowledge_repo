@@ -1,0 +1,162 @@
+:host {
+  display: block;
+  height: 100%;
+  .loader {
+    position: absolute;
+    z-index: 200;
+    top: calc(50% - 50px);
+    left: calc(50% - 50px);
+  }
+  .container {
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    main {
+      padding: 48px 40px 0 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      .cards {
+        background-color: #edeff1;
+        padding: 0px 8px 0px 8px;
+        border: solid 1px black;
+        border-radius: 4px;
+        position: relative;
+        .close-card {
+          position: absolute;
+          right: 0px;
+          top: 0px;
+        }
+        .card-spinner {
+          position: absolute;
+          z-index: 1;
+          top: calc(50% - 50px);
+          left: calc(50% - 50px);
+          opacity: 1;
+        }
+      }
+    }
+    .file-input {
+      display: none;
+    }
+    .form-fields {
+      display: flex;
+      margin-top: 24px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 10px;
+      .half-fields {
+        display: flex;
+        flex-direction: column;
+
+        gap: 17.6px;
+        .summary {
+          ::ng-deep {
+            .mat-mdc-form-field-flex {
+              height: fit-content !important;
+            }
+          }
+        }
+      }
+    }
+  }
+  .input_icon {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    flex-wrap: wrap;
+    gap: 24px;
+    .icon_button {
+      cursor: pointer;
+      border: none;
+      width: 42px;
+      height: 34px;
+      background-color: #47d7ac;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+  }
+
+  .input {
+    display: flex;
+    flex-direction: column;
+    width: 351px;
+    gap: 4px;
+  }
+  ::ng-deep {
+    .mat-mdc-icon-button.mat-mdc-button-base {
+      width: 26px;
+      height: 26px;
+      padding: 1px;
+      margin: 5px 6px 7px 6px;
+    }
+  }
+
+  .footer {
+    z-index: 2;
+    position: sticky;
+    bottom: 0px;
+    height: 72px;
+    flex-shrink: 0;
+    // margin-top: 62px;
+    padding-right: 79px;
+    box-shadow: 0 0 12px 0 rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    gap: 24px;
+    .dilog-button {
+      display: flex;
+      gap: 4px;
+      .icon {
+        width: 24px;
+        height: 24px;
+        margin: 0;
+      }
+      &.secondary {
+        background-color: #eff1f4 !important;
+        color: #13294b !important;
+      }
+    }
+  }
+  .input_tags {
+    display: flex;
+    flex-direction: column;
+    .tags {
+      width: 351px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+  }
+
+  @media screen and (max-width: 657px) {
+    .input {
+      width: 100%;
+    }
+    .input_icon {
+      gap: 0px;
+    }
+    .half-fields {
+      width: 100%;
+    }
+    .footer {
+      padding: 0px;
+      gap: 0px;
+      justify-content: space-around;
+    }
+    .form-fields {
+      gap: 17.6px !important;
+    }
+  }
+
+  // @media screen and (max-width: 1110) {
+
+  // }
+}

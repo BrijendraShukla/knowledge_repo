@@ -1,0 +1,285 @@
+@if (showLoader) {
+<mat-spinner class="loader"></mat-spinner>
+}
+<div class="container" [class.disable-with-spinner]="showLoader">
+  <form [formGroup]="form">
+    <main formArrayName="data">
+      <div class="knowledge-secondary_heading">
+        {{ data.type == "add" ? "Add Content" : "Edit Content" }}
+      </div>
+      @for (subGroup of formArray.controls; track subGroup.get('id')) {
+      <div class="cards" [formGroupName]="$index">
+        @if (-(-getFormGroup($index).controls["showSpinner"].value)) {
+        <mat-spinner class="card-spinner"></mat-spinner>
+        }
+        <div
+          [class.disable-with-spinner]="
+            -(-getFormGroup($index).controls['showSpinner'].value)
+          "
+        >
+          <input
+            #fileInput
+            type="file"
+            (click)="
+              fileInput.value = '';
+              getFormGroup($index).controls['file'].markAsTouched();
+              this.form.updateValueAndValidity()
+            "
+            (change)="onFileInput($any($event), $index)"
+            aria-hidden="true"
+            class="file-input"
+          />
+
+          <div class="form-fields">
+            <div class="half-fields">
+              <div class="input_icon">
+                <div class="input">
+                  <mat-label
+                    [ngClass]="{ error: hasError('file', $index) }"
+                    class="knowledge-label"
+                  >
+                    Add File *
+                  </mat-label>
+                  <mat-form-field class="disable-field">
+                    <input
+                      readonly="true"
+                      class="knowledge-input disable-field"
+                      matInput
+                      type="text"
+                      formControlName="file"
+                      placeholder="File Name"
+                    />
+                    @if(hasError('file',$index)) {
+                    <mat-error>{{
+                      errorMsg("file", "Add File", $index)
+                    }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <button
+                  (click)="fileInput.click()"
+                  mat-icon-button
+                  [disabled]="data.type == 'edit'"
+                  type="button"
+                  class="icon_button"
+                >
+                  <mat-icon svgIcon="upload_2"></mat-icon>
+                </button>
+              </div>
+              <div class="input">
+                <mat-label
+                  [ngClass]="{ error: hasError('fileName', $index) }"
+                  class="knowledge-label"
+                >
+                  File Name *
+                </mat-label>
+                <mat-form-field>
+                  <input
+                    class="knowledge-input"
+                    matInput
+                    type="text"
+                    formControlName="fileName"
+                    placeholder="Enter File Name"
+                  />
+                  @if(hasError('fileName',$index)) {
+                  <mat-error>{{
+                    errorMsg("fileName", "File Name", $index)
+                  }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+              <div class="input">
+                <mat-label
+                  [ngClass]="{ error: hasError('documentType', $index) }"
+                  class="knowledge-label"
+                >
+                  Document Type *
+                </mat-label>
+                <mat-form-field>
+                  <mat-select
+                    hideSingleSelectionIndicator="true"
+                    formControlName="documentType"
+                    class="knowledge-input"
+                    placeholder="Enter Document Type"
+                  >
+                    @for (documentType of documentType$ | async; track $index) {
+                    <mat-option [value]="documentType">{{
+                      documentType
+                    }}</mat-option
+                    >}
+                  </mat-select>
+                  @if(hasError('documentType',$index)) {
+                  <mat-error>{{
+                    errorMsg("documentType", "Document Type", $index)
+                  }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+              <div class="input_tags">
+                <div class="input">
+                  <mat-label
+                    [ngClass]="{ error: hasError('tags', $index) }"
+                    class="knowledge-label"
+                  >
+                    Add Tags *
+                  </mat-label>
+                  <mat-form-field>
+                    <input
+                      #tagInput
+                      formControlName="tag"
+                      (blur)="
+                        this.getFormGroup($index).controls[
+                          'tags'
+                        ].markAsTouched()
+                      "
+                      class="knowledge-input"
+                      matInput
+                      type="text"
+                      placeholder="Add Tags"
+                    />
+                    <button
+                      [disabled]="
+                        tagInput.value.trim().length < 1 ||
+                        this.getFormGroup($index).controls['tag'].hasError(
+                          'pattern'
+                        )
+                      "
+                      (click)="addTag(tagInput, $index)"
+                      type="button"
+                      mat-icon-button
+                      matIconSuffix
+                    >
+                      <mat-icon svgIcon="add"></mat-icon>
+                    </button>
+                    @if(hasError('tag',$index)) {
+                    <mat-error>{{
+                      errorMsg("tag", "Add Tags", $index)
+                    }}</mat-error>
+                    }
+                  </mat-form-field>
+                </div>
+                <div class="tags">
+                  @for (tag of getTags($index).controls;let idx = $index; track
+                  idx) {
+
+                  <app-tag
+                    [name]="tag.value.name"
+                    [id]="idx"
+                    (close)="onTagClose($event, $index)"
+                  ></app-tag>
+                  }
+                </div>
+              </div>
+            </div>
+            <div class="half-fields right-fields">
+              <div class="input">
+                <mat-label
+                  [ngClass]="{ error: hasError('fileCategory', $index) }"
+                  class="knowledge-label"
+                >
+                  File Category
+                </mat-label>
+                <mat-form-field class="disable-field">
+                  <input
+                    readonly="true"
+                    class="knowledge-input"
+                    matInput
+                    type="text"
+                    formControlName="fileCategory"
+                    placeholder="File Category"
+                  />
+                  @if(hasError('fileCategory',$index)) {
+                  <mat-error>{{
+                    errorMsg("fileCategory", "File Category", $index)
+                  }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+              <div class="input">
+                <app-autocomplete-multiselect
+                  actualControlName="industry"
+                  displayControlName="industryDisplay"
+                  [formGroup]="getFormGroup($index)"
+                  placeHolder="Industry"
+                  label="Industry"
+                  [list]="industries"
+                  [showError]="true"
+                  [showLabel]="true"
+                  [required]="true"
+                  [updateDisplay]="updateDisplayIndustry$.asObservable()"
+                ></app-autocomplete-multiselect>
+              </div>
+
+              <div class="input summary">
+                <mat-label
+                  [ngClass]="{ error: hasError('summary', $index) }"
+                  class="knowledge-label"
+                >
+                  Summary *
+                </mat-label>
+                <mat-form-field>
+                  <textarea
+                    #textarea
+                    class="knowledge-input"
+                    matInput
+                    rows="1"
+                    type="text"
+                    formControlName="summary"
+                    placeholder="Enter Summary"
+                    rows="8"
+                  ></textarea>
+                  @if(hasError('summary',$index)) {
+                  <mat-error>{{
+                    errorMsg("summary", "Summary", $index)
+                  }}</mat-error>
+                  }
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+          <button
+            *ngIf="data.type == 'add'"
+            [disabled]="formArray.controls.length <= 1"
+            (click)="closeCard($index)"
+            class="close-card"
+            mat-icon-button
+            type="button"
+          >
+            <mat-icon svgIcon="close"></mat-icon>
+          </button>
+        </div>
+      </div>
+      }
+    </main>
+  </form>
+
+  <div class="footer">
+    <button
+      *ngIf="data.type == 'add'"
+      type="button"
+      (click)="createCard()"
+      class="knowledge-button dilog-button"
+      mat-button
+    >
+      Add File
+    </button>
+    <button
+      (click)="close()"
+      type="button"
+      class="knowledge-button dilog-button secondary"
+      mat-button
+    >
+      <mat-icon class="icon" svgIcon="close"></mat-icon>Close
+    </button>
+    <button
+      type="button"
+      (click)="data.type == 'add' ? submit() : update()"
+      [disabled]="form.invalid"
+      class="knowledge-button dilog-button"
+      mat-button
+    >
+      <mat-icon class="icon" svgIcon="save"></mat-icon
+      >{{ data.type == "add" ? "Upload" : "Update" }}
+    </button>
+  </div>
+</div>

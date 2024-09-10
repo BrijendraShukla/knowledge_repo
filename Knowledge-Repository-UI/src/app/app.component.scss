@@ -1,0 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap");
+.loader {
+  position: fixed;
+  z-index: 200;
+  top: calc(50% - 50px);
+  left: calc(50% - 50px);
+}
+.container {
+  .main {
+    padding: 42px;
+    height: calc(100% - 80px);
+    font-family: "Inter", sans-serif;
+  }
+}

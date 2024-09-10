@@ -1,0 +1,26 @@
+<div class="container">
+  <div>
+    <button
+      type="button"
+      (click)="redirect('/')"
+      mat-button
+      class="example-icon favorite-icon"
+    >
+      <span class="header_action_item" [class.active]="activeUrl == '/'"
+        >Home</span
+      >
+    </button>
+  </div>
+  <div>
+    <button
+      type="button"
+      (click)="redirect('/content')"
+      mat-button
+      class="example-icon favorite-icon"
+    >
+      <span class="header_action_item" [class.active]="activeUrl == '/content'">
+        Add Content</span
+      >
+    </button>
+  </div>
+</div>

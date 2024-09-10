@@ -1,0 +1,168 @@
+/* You can add global styles to this file, and also import other style files */
+
+html,
+body {
+  height: 100%;
+  background-color: #edeff1;
+  overflow: visible !important;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+}
+
+.knowledge-secondary_heading {
+  color: #13294b;
+  font-family: "Inter";
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 36px; /* 150% */
+  margin: 0px;
+}
+.knowledge-heading_3 {
+  width: 149px;
+  height: 28px;
+  flex-grow: 0;
+  font-family: "Inter";
+  font-size: 24px;
+  font-weight: bold;
+  font-stretch: normal;
+  font-style: normal;
+  line-height: normal;
+  letter-spacing: normal;
+  text-align: left;
+  color: #13294b;
+}
+
+.knowledge-label {
+  align-self: stretch;
+  color: var(--Nagarro-Nightfall-Blue-Light, #4e5e78);
+
+  /* Label */
+  font-family: "IBM Plex Sans";
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 16px; /* 133.333% */
+}
+.knowledge-field {
+  width: 100%;
+}
+.knowledge-input {
+  display: flex !important;
+  height: 36px !important;
+  padding: 9px 0px 9px 3px !important;
+  justify-content: center !important;
+  align-items: center !important;
+  // border-radius: 3px !important;
+  // border: 1px solid #eff1f4 !important;
+  background: #fff !important;
+}
+
+textarea.knowledge-input {
+  height: auto !important;
+  resize: none;
+}
+.elipse-input {
+  padding-left: 0px !important;
+}
+.knowledge-button {
+  width: fit-content !important;
+
+  padding: 9px 16px !important;
+
+  border-radius: 4px !important;
+  background: #47d7ac !important;
+  color: var(--Nagarro-Basics-Pure-White, #fff) !important;
+
+  /* Button */
+  font-family: "IBM Plex Sans" !important;
+  font-size: 14px !important;
+  font-style: normal !important;
+  font-weight: 500 !important;
+  line-height: 18px !important; /* 128.571% */
+  flex-shrink: 0;
+}
+
+.dialog {
+  border-top: #47d7ac 6px solid;
+  border-radius: 8px;
+}
+
+.error {
+  color: red;
+}
+
+.disable-with-spinner {
+  pointer-events: none;
+  opacity: 0.4;
+  overflow: hidden;
+}
+.disable-field {
+  .mdc-notched-outline__trailing {
+    border: none;
+  }
+  .mdc-notched-outline__leading {
+    border: none;
+  }
+  .mat-mdc-text-field-wrapper {
+    border: none;
+  }
+  input {
+    color: rgba(0, 0, 0, 0.38) !important;
+  }
+}
+
+.mdc-checkbox
+  .mdc-checkbox__native-control:enabled:focus:checked
+  ~ .mdc-checkbox__background,
+.mdc-checkbox
+  .mdc-checkbox__native-control:enabled:focus:indeterminate
+  ~ .mdc-checkbox__background,
+.mdc-checkbox
+  .mdc-checkbox__native-control:enabled:checked
+  ~ .mdc-checkbox__background,
+.mdc-checkbox
+  .mdc-checkbox__native-control:enabled:indeterminate
+  ~ .mdc-checkbox__background,
+.mdc-checkbox
+  .mdc-checkbox__native-control[data-indeterminate="true"]:enabled
+  ~ .mdc-checkbox__background {
+  background-color: transparent !important;
+  border-radius: 2px !important;
+  border: solid 2px #13294b !important;
+}
+.mdc-checkbox
+  .mdc-checkbox__native-control:focus:checked
+  ~ .mdc-checkbox__ripple {
+  background-color: transparent !important;
+}
+
+.mat-mdc-autocomplete-panel {
+  .multiselect {
+    padding: 0px !important;
+    .mdc-list-item__primary-text {
+      width: 100% !important;
+      height: 48px !important;
+      mat-checkbox {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100% !important;
+        padding: 0px 16px !important;
+        .mat-internal-form-field {
+          width: 100% !important;
+          label {
+            width: 100% !important
+            ;
+          }
+        }
+      }
+    }
+  }
+}
