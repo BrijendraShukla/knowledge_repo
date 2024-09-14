@@ -40,7 +40,7 @@ services:
       - app-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+#      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   weaviate:
     image: cr.weaviate.io/semitechnologies/weaviate:1.26.3
