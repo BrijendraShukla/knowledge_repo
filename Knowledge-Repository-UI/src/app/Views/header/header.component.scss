@@ -3,7 +3,7 @@
     flex: 1 0 12px;
   }
   .spacer-2 {
-    flex: 0 1 88px;
+    flex: 0 100 88px;
     min-width: 12px;
   }
   .header {
@@ -19,6 +19,12 @@
     padding: 0px 80px;
     min-width: 100%;
     width: fit-content;
+    .logo {
+      flex-shrink: 0;
+      width: 49px;
+      height: 46px;
+      margin-right: 16px;
+    }
 
     &_heading {
       font-family: "Inter", sans-serif;
@@ -123,7 +129,7 @@
     }
   }
 }
-@media screen and (max-width: 840px) {
+@media screen and (max-width: 905px) {
   .spacer,
   .header_action,
   .spacer-2,

@@ -4,6 +4,8 @@
     <button
       mat-button
       (click)="form.reset()"
+      [disabled]="disableReset()"
+      (click)="resetFilter()"
       class="knowledge-button"
       type="button"
     >

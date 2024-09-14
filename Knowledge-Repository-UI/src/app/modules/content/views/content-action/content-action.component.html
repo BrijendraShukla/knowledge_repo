@@ -4,10 +4,18 @@
 <div class="container" [class.disable-with-spinner]="showLoader">
   <form [formGroup]="form">
     <main formArrayName="data">
-      <div class="knowledge-secondary_heading">
-        {{ data.type == "add" ? "Add Content" : "Edit Content" }}
+      <div class="header">
+        <div class="knowledge-secondary_heading">
+          {{ data.type == "add" ? "Add Content" : "Edit Content" }}
+        </div>
+        <div class="count" *ngIf="!showFinalPage && formArray.length > 1">
+          <span>Showing</span>
+          {{ currentSubGroupIndex + 1 + " " }}<span>of</span
+          >{{ " " + formArray.length }}
+        </div>
       </div>
       @for (subGroup of formArray.controls; track subGroup.get('id')) {
+      @if(!showFinalPage && $index==currentSubGroupIndex) {
       <div class="cards" [formGroupName]="$index">
         @if (-(-getFormGroup($index).controls["showSpinner"].value)) {
         <mat-spinner class="card-spinner"></mat-spinner>
@@ -26,6 +34,7 @@
               this.form.updateValueAndValidity()
             "
             (change)="onFileInput($any($event), $index)"
+            accept=".pdf , .docx"
             aria-hidden="true"
             class="file-input"
           />
@@ -237,7 +246,7 @@
               </div>
             </div>
           </div>
-          <button
+          <!-- <button
             *ngIf="data.type == 'add'"
             [disabled]="formArray.controls.length <= 1"
             (click)="closeCard($index)"
@@ -246,15 +255,89 @@
             type="button"
           >
             <mat-icon svgIcon="close"></mat-icon>
-          </button>
+          </button> -->
         </div>
+      </div>
+      } } @if (showFinalPage) {
+      <div class="table">
+        <mat-table [dataSource]="formArray.value">
+          <ng-container matColumnDef="fileName">
+            <mat-header-cell *matHeaderCellDef>File Name</mat-header-cell>
+            <mat-cell *matCellDef="let element; let i = index">
+              <div class="file-name-cell">
+                <div
+                  #fileName
+                  [matTooltip]="
+                    fileName.scrollWidth > fileName.clientWidth
+                      ? element.fileName
+                      : ''
+                  "
+                  class="name"
+                >
+                  {{ element.fileName }}
+                </div>
+                <mat-icon
+                  *ngIf="visitedSubGroupIndex.has(i)"
+                  svgIcon="check"
+                ></mat-icon>
+              </div>
+            </mat-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="fileType">
+            <mat-header-cell *matHeaderCellDef>File Type</mat-header-cell>
+            <mat-cell *matCellDef="let element" class="file-type">
+              {{ element.fileCategory }}
+            </mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="tags">
+            <mat-header-cell *matHeaderCellDef>Tags</mat-header-cell>
+            <mat-cell #tags *matCellDef="let element">
+              <div
+                #tagDiv
+                class="tag-row"
+                appTagColumn
+                [tags]="element.tags | map : 'name'"
+                [matTooltip]="
+                  tagDiv.getElementsByClassName('more').length
+                    ? (element.tags | map : 'name').join(', ')
+                    : ''
+                "
+              ></div>
+            </mat-cell>
+          </ng-container>
+          <ng-container matColumnDef="action">
+            <mat-header-cell *matHeaderCellDef>Action</mat-header-cell>
+            <mat-cell *matCellDef="let element; let i = index">
+              <button type="button" mat-icon-button (click)="editSubGroup(i)">
+                <mat-icon class="action" svgIcon="edit"></mat-icon>
+              </button>
+              <button
+                type="button"
+                mat-icon-button
+                [disabled]="formArray.length <= 1"
+                (click)="closeCard(i)"
+              >
+                <mat-icon class="action-gray" svgIcon="delete-black"></mat-icon>
+              </button>
+            </mat-cell>
+          </ng-container>
+          <mat-header-row
+            class="header-row"
+            *matHeaderRowDef="displayedColumns; sticky: true"
+          ></mat-header-row>
+          <mat-row
+            class="table-row"
+            *matRowDef="let row; columns: displayedColumns"
+          ></mat-row>
+        </mat-table>
       </div>
       }
     </main>
   </form>
 
   <div class="footer">
-    <button
+    <!-- <button
       *ngIf="data.type == 'add'"
       type="button"
       (click)="createCard()"
@@ -262,7 +345,7 @@
       mat-button
     >
       Add File
-    </button>
+    </button> -->
     <button
       (click)="close()"
       type="button"
@@ -272,6 +355,27 @@
       <mat-icon class="icon" svgIcon="close"></mat-icon>Close
     </button>
     <button
+      *ngIf="!showFinalPage && formArray.length > 1"
+      type="button"
+      (click)="next()"
+      [disabled]="formArray.at(currentSubGroupIndex).invalid"
+      class="knowledge-button dilog-button"
+      mat-button
+    >
+      <mat-icon class="next-icon" svgIcon="next"></mat-icon>
+      Next
+    </button>
+    <button
+      *ngIf="!showFinalPage && formArray.length > 1"
+      type="button"
+      (click)="gotoSummary()"
+      class="knowledge-button dilog-button"
+      mat-button
+    >
+      View Summary
+    </button>
+    <button
+      *ngIf="showFinalPage || formArray.length == 1"
       type="button"
       (click)="data.type == 'add' ? submit() : update()"
       [disabled]="form.invalid"
@@ -279,7 +383,13 @@
       mat-button
     >
       <mat-icon class="icon" svgIcon="save"></mat-icon
-      >{{ data.type == "add" ? "Upload" : "Update" }}
+      >{{
+        data.type == "add"
+          ? formArray.length > 1
+            ? "Upload All"
+            : "Upload"
+          : "Update"
+      }}
     </button>
   </div>
 </div>

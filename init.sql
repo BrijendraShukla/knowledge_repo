@@ -1,0 +1,60 @@
+-- Insert into repository_industry
+INSERT INTO repository_industry (id, industry) VALUES
+(1, 'Agriculture and Allied Industries'),
+(2, 'Auto Components'),
+(3, 'Automobiles'),
+(4, 'Aviation'),
+(5, 'Ayush'),
+(6, 'Banking'),
+(7, 'Biotechnology'),
+(8, 'Cement'),
+(9, 'Chemicals'),
+(10, 'Consumer Durables'),
+(11, 'Defence Manufacturing'),
+(12, 'E-Commerce'),
+(13, 'Education and Training'),
+(14, 'Electric Vehicle'),
+(15, 'Electronics System Design & Manufacturing'),
+(16, 'Engineering and Capital Goods'),
+(17, 'Financial Services'),
+(18, 'FMCG'),
+(19, 'Food Processing'),
+(20, 'Gems and Jewellery'),
+(21, 'Healthcare'),
+(22, 'Infrastructure'),
+(23, 'Insurance'),
+(24, 'IT & BPM'),
+(25, 'Manufacturing'),
+(26, 'Media and Entertainment'),
+(27, 'Medical Devices'),
+(28, 'Metals and Mining'),
+(29, 'MSME'),
+(30, 'Oil and Gas'),
+(31, 'Paper & Packaging'),
+(32, 'Pharmaceuticals'),
+(33, 'Ports'),
+(34, 'Power'),
+(35, 'Railways'),
+(36, 'Real Estate'),
+(37, 'Renewable Energy'),
+(38, 'Retail'),
+(39, 'Roads'),
+(40, 'Science and Technology'),
+(41, 'Services'),
+(42, 'Steel'),
+(43, 'Telecommunications'),
+(44, 'Textiles'),
+(45, 'Tourism and Hospitality');
+
+-- Insert into repository_documenttype
+INSERT INTO repository_documenttype (id, document_type) VALUES
+(1, 'Proposal'),
+(2, 'White Paper'),
+(3, 'Pitch Deck'),
+(4, 'Flyer & PoV'),
+(5, 'Other');
+
+-- Insert into repository_filetype
+INSERT INTO repository_filetype (id, file_type) VALUES
+(1, 'pdf'),
+(2, 'docx');

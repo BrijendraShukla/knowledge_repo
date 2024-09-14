@@ -24,13 +24,14 @@ from .models import FileInformation, Tags, Industry, FileType,DocumentType
 from .filters import FileInformationFilter, UserFileInformationFilter
 from .serializers import FileUploadSerializer, TagSerializer, IndustrySerializer, FileTypeSerializer,DocumentTypeSerializer
 from .forms import MultiFileUploadForm
-from .utils import convert_and_process_file, summarize_document, store_in_weaviate,CustomPagination,UploadResponse,DocumentResponse,generate_embedding,safe_remove,fetch_from_postgresql,extract_tags_from_query
+from .utils import convert_and_process_file, summarize_document, store_in_weaviate,CustomPagination,UploadResponse,DocumentResponse,safe_remove,fetch_from_postgresql,extract_unique_tags_from_results,extract_tags_from_query
 import uuid
 import json
 import traceback
 from django.core.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from datetime import datetime
+from weaviate.classes.config import Configure, Property, DataType
 
 
 class FileInformationViewSet(ModelViewSet):
@@ -451,18 +452,7 @@ def QAview(request):
     if not query:
         return JsonResponse({'error': 'Query parameter is required'}, status=400)
     
-    # Check if GenerateTags parameter is provided and evaluate it
     generate_tags = request.query_params.get('generate_tag', '').lower() == 'true'
-
-    # Optionally generate tags if requested
-    nlp_tags = []
-    if generate_tags:
-        nlp_tags = extract_tags_from_query(query)
-
-    # Generate embedding for the query
-    # query_vector = generate_embedding(query)
-    # if not query_vector:
-    #     return JsonResponse({'error': 'Failed to generate embedding'}, status=500)
 
     # Search in Weaviate
     search_results = search_documents(query)
@@ -470,12 +460,27 @@ def QAview(request):
         return JsonResponse({'error': 'No matching documents found'}, status=404)
 
     # Extract UUIDs from Weaviate search results
-    uuids = [result['_additional']['id'] for result in search_results]
+    uuids = [result['uuid'] for result in search_results]
 
     # Fetch records from PostgreSQL
     results = fetch_from_postgresql(uuids)
-    # Extract tags using NLP
-    # nlp_tags = extract_tags_from_query(query)
+    # Extract unique tags from the results
+    unique_tags = extract_unique_tags_from_results(results)
+    nlp_tags = []
+    if generate_tags:
+        nlp_tags = extract_tags_from_query(query, unique_tags)
+        
+        # New condition: If no tags are generated, return an empty response
+        if not nlp_tags:
+            return JsonResponse({
+                'count': 0,
+                'total_pages': 0,
+                'current_page': 1,
+                'page_size': int(request.query_params.get('pageSize', 10)),
+                'results': [],
+                'tags': [],
+            })
+
     # Get user-provided tags
     user_tags = request.query_params.getlist('tags', [])
     # Determine which tags to use for filtering
@@ -527,8 +532,8 @@ def QAview(request):
     filtered_records = filter_records(results, request.query_params, tags_to_use)
 
     # If no filtered records and GenerateTags is true, show all initial records
-    if not filtered_records and generate_tags:
-        filtered_records = results
+    # if not filtered_records and generate_tags:
+    #     filtered_records = results
 
     # Apply pagination manually
     page_size = int(request.query_params.get('pageSize', 10))
@@ -555,12 +560,11 @@ def QAview(request):
 def fetch_all_records(request):
     class_name = "Document"
     try:
-        result = (
-            client.query
-            .get(class_name)
-            .with_additional(["id"])
-            .do()
-        )
+        collection = client.collections.get(class_name)
+        result = []
+        for item in collection.iterator():
+            result.append(item.uuid)
+            
         return JsonResponse(result, safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
@@ -569,49 +573,24 @@ def fetch_all_records(request):
 def delete_all_records(request):
     class_name = "Document"
     try:
-        # Fetch all records first
-        records = (
-            client.query
-            .get(class_name)
-            .with_additional(["id"])
-            .do()
-        )
+        collection = client.collections.get(class_name)
+        for item in collection.iterator():
+            collection.data.delete_by_id(item.uuid)
         
-        ids = [record['_additional']['id'] for record in records['data']['Get'][class_name]]
-        
-        # Delete all records
-        for record_id in ids:
-            client.data_object.delete(record_id, class_name)
         
         return JsonResponse({'status': 'All records deleted'}, status=200)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=400)
     
-@api_view(['GET'])
-def check_weaviate_schema(request):
-    class_name = "Document"
-    
-    # Fetch the schema
-    try:
-        schema = client.schema.get()
-        class_schema = next((cls for cls in schema['classes'] if cls['class'] == class_name), None)
-        
-        if class_schema:
-            return JsonResponse(class_schema, status=200)
-        else:
-            return JsonResponse({'error': f'Class "{class_name}" does not exist in Weaviate.'}, status=404)
-    
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
-    
+
 
 @api_view(['DELETE'])
 def delete_class(request, class_name):
     try:
-        client.schema.delete_class(class_name)
+        client.collections.delete(class_name)
         return Response({"message": f"Class '{class_name}' deleted successfully."}, status=status.HTTP_200_OK)
     except Exception as e:
-        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -619,24 +598,30 @@ def delete_class(request, class_name):
 def create_weaviate_schema(request):
     class_name = "Document"
     
-    class_obj = {
-        "class": class_name,
-        "vectorizer": "text2vec-transformers",
-        "properties": [
-            {"name": "file_name", "dataType": ["string"]},
-            {"name": "file_type", "dataType": ["string"]},
-            {"name": "industry_type", "dataType": ["string[]"]},
-            {"name": "tags", "dataType": ["string[]"]},
-            {"name": "document_type", "dataType": ["string"]},  # Corrected type
-            {"name": "summary", "dataType": ["text"]},
-            {"name": "content", "dataType": ["text[]"]},
-            {"name": "created_at", "dataType": ["date"]},
-            {"name": "modified_at", "dataType": ["date"]}
-        ]
-    }
-    
     try:
-        client.schema.create_class(class_obj)
+        client.collections.create(
+                    class_name,
+                    vectorizer_config=[
+                        Configure.NamedVectors.text2vec_azure_openai(
+                        name="title_vector",
+                        source_properties=["title"],
+                        base_url= "https://ragkr.openai.azure.com/",
+                        resource_name="ragkr",
+                        deployment_id="RAG_KR_TextEmbedding_3_Large",
+                    )],
+                    properties = [
+                        Property(name="file_name", data_type=DataType.TEXT),
+                        Property(name="file_type", data_type=DataType.TEXT),
+                        Property(name="industry_type", data_type=DataType.TEXT_ARRAY),
+                        Property(name="tags", data_type=DataType.TEXT_ARRAY),
+                        Property(name="document_type", data_type=DataType.TEXT),
+                        Property(name="summary", data_type=DataType.TEXT),
+                        Property(name="content", data_type=DataType.TEXT_ARRAY),
+                        Property(name="created_at", data_type=DataType.DATE),
+                        Property(name="modified_at", data_type=DataType.DATE)
+                    ]
+                )
+        
         return Response({"message": f"Class '{class_name}' created successfully."}, status=status.HTTP_201_CREATED)
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

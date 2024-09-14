@@ -69,8 +69,8 @@ export class SearchStore extends StateService<SearchStateModel> {
       updatedPayLoad.tags.forEach((tag: string) => {
         finalTag.add(tag);
       });
-      updatedPayLoad.tags = Array.from(finalTag);
     }
+    updatedPayLoad.tags = Array.from(finalTag);
     this.setState({ payload: updatedPayLoad });
   }
 

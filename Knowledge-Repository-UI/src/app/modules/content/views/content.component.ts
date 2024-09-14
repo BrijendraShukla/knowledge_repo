@@ -21,7 +21,8 @@ import { MyContributionStore } from '../state/my-contribution.store';
 import {
   delay,
   distinctUntilChanged,
-  finalize,
+  fromEvent,
+  Observable,
   Subject,
   take,
   takeUntil,
@@ -83,8 +84,15 @@ export class ContentComponent implements OnInit, OnDestroy {
   private _componentDistroyed = new Subject<void>();
   aboutToDeleteContribution: number | null = null;
   toDeleteContribution: myContribution | null = null;
+  inputFiles = document.createElement('input');
+  private browseButtonClicked!: Observable<any>;
 
   ngOnInit(): void {
+    this.inputFiles.setAttribute('type', 'file');
+    this.inputFiles.setAttribute('multiple', 'multiple');
+    this.inputFiles.setAttribute('accept', '.pdf , .docx');
+    this.browseButtonClicked = fromEvent(this.inputFiles, 'change');
+    this._subscribeToBrowse();
     this._subscribePayloadChange();
     this._subscribeDataChange();
   }
@@ -186,6 +194,18 @@ export class ContentComponent implements OnInit, OnDestroy {
 
   loadNext() {
     this.contributionStore.getNextPage();
+  }
+
+  private _subscribeToBrowse() {
+    this.browseButtonClicked
+      .pipe(takeUntil(this._componentDistroyed))
+      .subscribe((event) => {
+        console.log(event.target?.files?.length);
+        if (event.target?.files && event.target?.files?.length > 0) {
+          this.openAddContent(Array.from(event.target.files));
+        }
+        event.target.value = '';
+      });
   }
 
   private _subscribeDataChange() {

@@ -63,6 +63,7 @@ export class AutocompleteMultiselectComponent implements OnInit {
     this.updateDisplay?.subscribe(() => {
       this.autocompleteClose('blur');
     });
+    this.autocompleteClose('blur');
   }
 
   ngOnDestroy(): void {

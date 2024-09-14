@@ -5,11 +5,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import {
+  BehaviorSubject,
   distinctUntilChanged,
   Subject,
   take,
   takeUntil,
-  timeInterval,
 } from 'rxjs';
 import { FilterComponent } from '../../../Views/filter/filter.component';
 import {
@@ -29,6 +29,7 @@ import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { SearchApiService } from '../agents/search-api.service';
 import { DocumentViewComponent } from '../../../Views/document-view/document-view.component';
 import { ToasterService } from '../../../state/toaster.service';
+import { LoaderService } from '../../../state/loader.service';
 
 @Component({
   selector: 'app-search',
@@ -54,7 +55,8 @@ export class SearchComponent implements OnInit {
     private store: SearchStore,
     private matDialog: MatDialog,
     private searchAPI: SearchApiService,
-    private toaster: ToasterService
+    private toaster: ToasterService,
+    private loaderService: LoaderService
   ) {}
   private _componentDistroyed = new Subject<void>();
   apiResponseData?: SearchResultResponse;
@@ -70,6 +72,7 @@ export class SearchComponent implements OnInit {
   @ViewChild('detailsTemplate')
   detailTemplate!: TemplateRef<any>;
   detailRef?: MatDialogRef<any>;
+  enableReset: BehaviorSubject<boolean> = new BehaviorSubject(false);
 
   ngOnInit(): void {
     this.searchValue = this.store.getSearchTerm();
@@ -86,6 +89,7 @@ export class SearchComponent implements OnInit {
   ngOnDestroy(): void {
     this._componentDistroyed.next();
     this._componentDistroyed.complete();
+    this.store.resetToInitialState();
   }
 
   search(event: Event) {
@@ -102,6 +106,16 @@ export class SearchComponent implements OnInit {
     console.log(value);
     if (value.tags?.length > 0) {
       value.generate_tag = false;
+    } else {
+      const tempValue = { ...value };
+      for (let key in tempValue) {
+        if (tempValue[key] == null) {
+          delete tempValue[key];
+        }
+      }
+      if (!Object.keys(tempValue).length) {
+        value.generate_tag = true;
+      }
     }
     this.store.setPayload(value);
   }
@@ -119,6 +133,7 @@ export class SearchComponent implements OnInit {
 
   onTagClose(event: { tag: string; id: number }) {
     this.store.removeTag(event.tag);
+    this.enableReset.next(true);
   }
 
   openDetailDialog(fileData: SearchResultData) {
@@ -126,7 +141,6 @@ export class SearchComponent implements OnInit {
     this.detailRef = this.matDialog.open(this.detailTemplate, {
       panelClass: 'dialog',
       width: '960px',
-      height: '443px',
     });
   }
 
@@ -139,17 +153,21 @@ export class SearchComponent implements OnInit {
         console.log(response.body);
         const fileUrl = window.URL.createObjectURL(response.body!);
         if (type == 'view') {
-          this.matDialog.open(DocumentViewComponent, {
-            panelClass: 'dialog',
-            width: '960px',
-            data: {
-              fileUrl,
-            },
-          });
+          window.open(fileUrl, '_blank');
+          // this.matDialog.open(DocumentViewComponent, {
+          //   panelClass: 'dialog',
+          //   width: '960px',
+          //   data: {
+          //     fileUrl,
+          //   },
+          // });
         } else {
           const link = document.createElement('a');
           link.setAttribute('href', fileUrl);
-          link.setAttribute('download', this.detailsData.name);
+          link.setAttribute(
+            'download',
+            this.detailsData.name + this.detailsData.file_type
+          );
           link.click();
           this.toaster.showToater({
             msg: `${this.detailsData.name} downloaded successfully`,
@@ -205,6 +223,7 @@ export class SearchComponent implements OnInit {
       .subscribe((data) => {
         this.apiResponseData = data;
         this.store.setPayload({ tags: data.tags });
+        this.loaderService.hideLoader();
       });
   }
 
@@ -247,6 +266,7 @@ export class SearchComponent implements OnInit {
             pre.industry == current.industry &&
             pre.query == current.query &&
             pre.document_type == current.document_type &&
+            pre.generate_tag == current.generate_tag &&
             (this._compareTags(pre.tags, current.tags) ||
               this._compareTags(current.tags, this.apiResponseData?.tags))
             // pre.pageNumber == current.pageNumber &&
@@ -260,6 +280,7 @@ export class SearchComponent implements OnInit {
       )
       .subscribe((value) => {
         if (value.query.trim().length > 0) {
+          this.loaderService.showLoader();
           this.store.getSearchDataFromApi();
         }
       });

@@ -40,6 +40,10 @@ import { LoaderService } from '../../../../state/loader.service';
 import { MasterStore } from '../../../../state/master.store';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AutocompleteMultiselectComponent } from '../../../../Views/autocomplete-multiselect/autocomplete-multiselect.component';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { MapPipe } from '../../../../pipes/map.pipe';
+import { TagColumnDirective } from '../../../../directives/tag-column.directive';
 
 @Component({
   selector: 'app-content-action',
@@ -58,7 +62,11 @@ import { AutocompleteMultiselectComponent } from '../../../../Views/autocomplete
     MatProgressSpinnerModule,
     MatAutocompleteModule,
     MatCheckboxModule,
+    MatTableModule,
+    MatTooltipModule,
     AutocompleteMultiselectComponent,
+    MapPipe,
+    TagColumnDirective,
   ],
   templateUrl: './content-action.component.html',
   styleUrl: './content-action.component.scss',
@@ -93,6 +101,10 @@ export class ContentActionComponent
   documentType$!: Observable<string[]>;
   showLoader: boolean = false;
   updateDisplayIndustry$ = new Subject<void>();
+  displayedColumns = ['fileName', 'fileType', 'tags', 'action'];
+  currentSubGroupIndex: number = 0;
+  visitedSubGroupIndex: Set<number> = new Set();
+  showFinalPage: boolean = false;
 
   ngOnInit(): void {
     console.log(this.data.file?.forEach((file) => console.log(file.name)));
@@ -104,14 +116,6 @@ export class ContentActionComponent
       .subscribe((industries: string[]) => {
         this.industries = industries;
       });
-    if (this.data.file) {
-      this.data.file.forEach((file, index: number) => {
-        (this.formArray.controls[index] as FormGroup).controls['file'].setValue(
-          file.name
-        );
-        this._uploadFile(file, index);
-      });
-    }
     if (this.data.type == 'edit') {
       this._getContributionDetail();
     }
@@ -119,9 +123,34 @@ export class ContentActionComponent
   }
 
   ngAfterViewInit(): void {
+    if (this.data.file) {
+      this.data.file.forEach((file, index: number) => {
+        if (
+          file.type == 'application/pdf' ||
+          file.type ==
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ) {
+          (this.formArray.controls[index] as FormGroup).controls[
+            'file'
+          ].setValue(file.name);
+          this._uploadFile(file, index);
+        } else {
+          (this.formArray.controls[index] as FormGroup).controls[
+            'file'
+          ].markAsTouched();
+          this.form.updateValueAndValidity();
+          (this.formArray.controls[index] as FormGroup).controls[
+            'file'
+          ].setErrors({
+            extension: ['pdf', 'docx'],
+          });
+        }
+      });
+    }
     if (this.data.type == 'edit') {
       this.updateDisplayIndustry$.next();
     }
+    this.cdr.detectChanges();
   }
   ngOnDestroy(): void {
     this._componentDistroyed.next();
@@ -202,17 +231,26 @@ export class ContentActionComponent
     this.getFormGroup(groupIndex).controls['tag'].markAsTouched();
   }
 
-  createCard() {
-    this.formArray.push(this._createSubgroup());
-  }
+  // createCard() {
+  //   this.formArray.push(this._createSubgroup());
+  // }
   closeCard(cardIndex: number) {
     this.fileControlMap.delete(
       this.getFormGroup(cardIndex).controls['id'].value
     );
 
     this.formArray.removeAt(cardIndex);
+    if (this.formArray.length == 1) {
+      this.currentSubGroupIndex = 0;
+      this.showFinalPage = false;
+    }
     this.form.updateValueAndValidity();
     this.cdr.detectChanges();
+  }
+
+  editSubGroup(cardIndex: number) {
+    this.currentSubGroupIndex = cardIndex;
+    this.showFinalPage = false;
   }
 
   submit() {
@@ -256,6 +294,27 @@ export class ContentActionComponent
         },
       });
   }
+
+  next() {
+    if (this.formArray.length > this.currentSubGroupIndex) {
+      this.visitedSubGroupIndex.add(this.currentSubGroupIndex);
+      this.currentSubGroupIndex++;
+    }
+    if (this.formArray.length == this.currentSubGroupIndex) {
+      this.showFinalPage = true;
+    }
+    this.cdr.detectChanges();
+  }
+
+  gotoSummary() {
+    if (this.formArray.controls[this.currentSubGroupIndex].valid) {
+      this.visitedSubGroupIndex.add(this.currentSubGroupIndex);
+    } else {
+      this.visitedSubGroupIndex.delete(this.currentSubGroupIndex);
+    }
+    this.showFinalPage = true;
+    this.cdr.detectChanges();
+  }
   close() {
     this.dialogRef.close();
   }
@@ -274,7 +333,7 @@ export class ContentActionComponent
         tags: this.fb.array([]),
         documentType: ['', [Validators.required]],
         tag: ['', [Validators.pattern('[\\w\\s]*')]],
-        summary: ['', [Validators.required, Validators.maxLength(400)]],
+        summary: ['', [Validators.required, Validators.maxLength(1000)]],
       },
       {
         validators: [this._tagsValidation(), this._industryValidation()],

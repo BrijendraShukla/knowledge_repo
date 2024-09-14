@@ -5,7 +5,6 @@ from langchain_openai import AzureChatOpenAI
 import fitz  # PyMuPDF
 import docx
 # import numpy as np
-from langchain_openai import AzureChatOpenAI
 from rest_framework.pagination import PageNumberPagination
 # from weaviate_service import add_document_to_weaviate, search_documents
 import io
@@ -13,7 +12,6 @@ import re
 from typing import List
 import uuid  # private key (need to learn more about it)
 import weaviate
-from openai import AzureOpenAI
 import os
 from weaviate_service import client
 import time
@@ -24,6 +22,7 @@ from .models import FileInformation, Tags
 import spacy
 from collections import Counter
 from string import punctuation
+from weaviate.classes.config import Configure, Property, DataType
 
 # Set environment variables
 os.environ["AZURE_OPENAI_API_KEY"] = os.getenv("AZURE_OPENAI_API_KEY")
@@ -33,7 +32,9 @@ nlp = spacy.load("en_core_web_sm")
 # Initialize the AI model
 llm = AzureChatOpenAI(
     # azure_deployment="RAGKR",
-    azure_deployment="RAG_KR_4o",
+    # azure_deployment="RAG_KR_4o",
+    # azure_deployment="RAG_KR_TextEmbedding_3_Large",
+    azure_deployment="RAG_KR_4o_second",
     api_version="2024-05-01-preview",
     temperature=0,
     max_tokens=None,
@@ -42,66 +43,130 @@ llm = AzureChatOpenAI(
 )
 
 def process_response_content(response_content):
-    # Extract all tags under "Final Selected Tags"
-    final_tags_section = re.search(r'### Final Selected Tags:(.*?)$', response_content, re.S)
-    
-    if final_tags_section:
-        # Find tags within this section
-        final_tags = re.findall(r'\*\*(.*?)\*\*', final_tags_section.group(1))
-        return final_tags
-    else:
-        return []
-def generate_tags_with_openai(query):
-    # Fetch all tags from the database
-    all_tags = list(Tags.objects.values_list('name', flat=True))
-    
-    # Create a comma-separated string of all tags
-    tags_str = ', '.join(all_tags)
+    """
+    Extracts tags from the AI response content.
+    Args:
+        response_content (str): The content returned by the AI model.
+    Returns:
+        list: A list of extracted tags.
+    """
+    final_tags = re.findall(r'^\d+\.\s(.*?)$', response_content, re.M)
+    return [tag.strip() for tag in final_tags]
+
+
+def generate_tags_with_openai(query, unique_tags):
+    """
+    Generates relevant tags using the Azure OpenAI model.
+    Args:
+        query (str): The user's query.
+        unique_tags (list): List of existing tags to match against.
+    Returns:
+        list: A list of matched tags from the database.
+    """
+    tags_str = ', '.join(unique_tags)
     
     # Use the Azure OpenAI model to generate tags based on the user's query
-    prompt = (
-        f"Given the following tags from the database: {tags_str}. "
-        f"First go with each and every tags within the list then select most accuract and justified tags which will define based on the user's query: '{query}', and then finally select only 5 tags from the selected list of most accuract tags."
-        "If none of the tags are relevant, return 'No matching tags'."
-    )
-    response = llm(prompt)
+    # prompt = f"""
+    # Based on the user query: "{query}", please select and list up to 5 most relevant tags that are directly related to the topic of the query.
 
+    # Step 1: Determine if the query is meaningful and related to technology, programming, or professional topics.
+    # - If the query is not meaningful (e.g., "more", "what is today", "have a dinner tonight") or is too vague (e.g., single words like "arc" without context), respond with:
+    # "The query is not specific or relevant enough to assign meaningful tags."
+
+    # Step 2: If the query is meaningful and relevant, select up to 5 most relevant tags that are directly related to the main topic of the query. The selected tags should be as specific and relevant as possible, even if they are not present in the provided tags list.
+
+    # IMPORTANT GUIDELINES:
+    # 1. The selected tags should be the most relevant and specific to the query, even if they are not in the provided list.
+    # 2. Multi-word tags: Treat common technology terms as single tags even if they appear with spaces (e.g., "cloud computing", "artificial intelligence").
+    # 3. Relevance: Select tags that are directly related to the main topic of the query.
+    # 4. Specificity: Prioritize specific, topic-related tags over broad terms.
+    # 5. Please try to understand spelling mistake and abbrevations a user can make in a query( like AI - artificial intelligence , Gen AI- Generative AI, etc.).
+    # 6. If no tags are relevant to the query, respond with:
+    # "No relevant tags found for this query."
+
+    # Please structure your response in the following format:
+
+    # 1. [Most Relevant Tag]
+    # 2. [Second Most Relevant Tag]
+    # 3. [Third Most Relevant Tag]
+    # 4. [Fourth Most Relevant Tag]
+    # 5. [Fifth Most Relevant Tag]
+
+    # For non-meaningful or irrelevant queries:
+    # "The query is not specific or relevant enough to assign meaningful tags."
+
+    # For meaningful queries but no directly relevant tags:
+    # "No relevant tags found for this query."
+    
+    # For non-meaningful or irrelevant queries:
+    # "The query is not specific or relevant enough to assign meaningful tags."
+
+    # For meaningful queries but no directly relevant tags in the list:
+    # "No directly relevant tags found in the provided list for this query."
+    
+    # Tags List: {tags_str}.
+    # """
+    prompt = f"""
+    Assess and tag the user query: "{query}" following these guidelines:
+ 
+    Relevance Check:
+    - Confirm if the query relates to technology, programming, or professional topics.
+    - If vague or irrelevant (e.g., "more", "what is today", "arc"), respond:
+      "The query lacks specificity or relevance for tagging."
+ 
+    Tag Selection:
+    - For relevant queries, identify up to 5 tags that directly pertain to the main topic.
+    - Consider multi-word terms as single tags (e.g., "cloud computing").
+    - Address abbreviations and common misspellings (e.g., "AI" for artificial intelligence).
+ 
+    Selection Criteria:
+    1. Choose tags that are most specific and directly relevant.
+    2. If no appropriate tags are found, respond:
+       "No relevant tags found for this query."
+ 
+    Response Format:
+    For valid queries:
+      1. [Most Relevant Tag]
+      2. [Second Most Relevant Tag]
+      3. [Third Most Relevant Tag]
+      4. [Fourth Most Relevant Tag]
+      5. [Fifth Most Relevant Tag]
+ 
+    For non-specific or irrelevant queries:
+      "The query lacks specificity or relevance for tagging."
+ 
+    For queries with no matching tags:
+      "No relevant tags found for this query."
+ 
+    Tags List: {tags_str}.
+    """
+    
+    response = llm(prompt)
     # Extract the main content from the response
     response_content = response.content.strip()
-    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$",response_content)
     
     # Process the content to extract tags
     generated_tags = process_response_content(response_content)
-    print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",generated_tags)
     
     # Filter to ensure the returned tags actually exist in the database
-    matched_tags = [tag for tag in generated_tags if tag in all_tags]
-    print("!!!!!!!!!!!!!!!!!!!!!!!!!!111",matched_tags)
+    matched_tags = [tag for tag in generated_tags if tag in unique_tags]
 
     return matched_tags
 
 
-def get_hotwords(text):
-    result = []
-    pos_tag = ['PROPN', 'ADJ', 'NOUN'] 
-    doc = nlp(text.lower()) 
-    for token in doc:
-        if(token.text in nlp.Defaults.stop_words or token.text in punctuation):
-            continue
-        if(token.pos_ in pos_tag):
-            result.append(token.text)
-    return result
-
-def extract_tags_from_query(query):
-    # Generate tags using Azure OpenAI, ensuring they match the database tags
-    matched_tags = generate_tags_with_openai(query)
+def extract_tags_from_query(query, unique_tags):
+    """
+    Extracts tags from a query using the Azure OpenAI model.
+    Args:
+        query (str): The user's query.
+        unique_tags (list): List of unique tags to match against.
+    Returns:
+        list: A list of matched tags.
+    """
+    matched_tags = generate_tags_with_openai(query,unique_tags)
     return list(matched_tags)
 
-openai_client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version="2024-05-01-preview",
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-)
+
 
 
 class DocumentResponse(BaseModel):
@@ -117,6 +182,13 @@ class UploadResponse(BaseModel):
     documents: List[DocumentResponse]
 
 def convert_pdf_to_txt(pdf_file):
+    """
+    Converts PDF content to text.
+    Args:
+        pdf_file (file): The PDF file to convert.
+    Returns:
+        str: The extracted text content from the PDF.
+    """
     data = pdf_file.read()
     doc = fitz.open(stream=data, filetype="pdf")
     text = ""
@@ -125,6 +197,13 @@ def convert_pdf_to_txt(pdf_file):
     return text
 
 def convert_doc_to_txt(doc_file):
+    """
+    Converts DOC/DOCX content to text.
+    Args:
+        doc_file (file): The DOC/DOCX file to convert.
+    Returns:
+        str: The extracted text content from the DOC/DOCX file.
+    """
     data = doc_file.read()
     doc = docx.Document(io.BytesIO(data))
     text = ""
@@ -133,10 +212,24 @@ def convert_doc_to_txt(doc_file):
     return text
 
 def process_txt_file(txt_file):
+    """
+    Processes a TXT file.
+    Args:
+        txt_file (file): The TXT file to process.
+    Returns:
+        str: The content of the TXT file as a string.
+    """
     content = txt_file.read()
     return content.decode('utf-8')
 
 def convert_and_process_file(file):
+    """
+    Converts and processes a file based on its extension.
+    Args:
+        file (file): The file to convert and process.
+    Returns:
+        tuple: Extracted text, file type, and file name.
+    """
     file_extension = os.path.splitext(file.name)[1].lower()
     text = ""
     
@@ -168,15 +261,56 @@ industries_list = [
 ]
 
 def summarize_document(text):
+    """
+    Summarizes the document content and extracts industry type, tags, and summary.
+    Args:
+        text (str): The text content of the document.
+    Returns:
+        tuple: The identified industry type, cleaned tags, and summary.
+    """
+    # prompt = f"""
+    # Analyze the following text and provide:
+
+    # #Industry type:[Identify the most relevant industry from this list: {industries_list}.]
+    # #Tags: Generate up to 10 highly relevant tags for this document, adhering to these strict rules:
+    # 1. ONLY use words, phrases, or concepts that appear verbatim in the text or are directly implied by specific content in the text.
+    # 2. Focus on key topics, themes, technologies, methodologies, frameworks, company names, product names, and technical terms found in the document.
+    # 3. Prioritize specificity and relevance. Tags should be concise (1-3 words) and directly related to the document's content.
+    # 4. Avoid any tags that are not explicitly supported by the text.
+    # 5. If fewer than 10 relevant tags can be found in the text, only list those that are present.
+
+    # List tags in order of relevance, separated by commas. Each tag MUST be traceable to specific content in the document.
+
+    # #Summary: Provide a concise summary of the document's main points and purpose in exactly 300 characters, using only information present in the text.
+
+    # Text: {text}
+    # """
+    
     prompt = f"""
-    You are a helpful assistant who performs certain tasks on a document.
-    Please analyze the following text and provide:
-    #Industry type: [Find the most suitable industry type from the Text based on this list {industries_list}]
-    #Tags: [Find the most relevant 10 metatags from the given Text separated by comma. Metatags are those keywords that will be used to help the user to find the relevant document based on these tags. Sequence the tags in order of their relevance.]
-    #Summary: [Summary of the document content in 300 characters only and it should never exceed the character limit]
+    Analyze the following text and provide:
+
+    #Industry type: From the list [{industries_list}], select the single most relevant industry that aligns with the core content, themes, or context of the text.
+       - Ensure the selected industry accurately reflects the primary focus or domain of the text.
+       
+    #Tags: Generate up to 10 relevant tags based on the content of the document.
+       - Only use terms explicitly mentioned or strongly implied within the text, such as:
+         - Main topics
+         - Technologies
+         - Methodologies
+         - Frameworks
+         - Company or product names
+         - Technical terms
+       - Prioritize tags that are specific, concise (1-3 words), and directly related to the document.
+       - Do not include tags unsupported by the text.
+       - If fewer than 10 relevant tags exist, provide only the available ones.
+       - List the tags in order of relevance, separated by commas.
+
+    #Summary: Provide a clear, concise summary of the document's main points and purpose.
+       - Use exactly 300 characters, based solely on information present in the text.
 
     Text: {text}
     """
+    
     # Send the prompt to the AI model for summarization
     ai_msg = llm.invoke(prompt)
     
@@ -203,43 +337,55 @@ def summarize_document(text):
     cleaned_tags = [tag.strip('- ') for tag in tags]
     return industry_type, cleaned_tags, summary
 
-def generate_embedding(text):
-    try:
-        response = openai_client.embeddings.create(
-            input=text,
-            model="text-embedding-ada-002"
-        )
-        return response['data'][0]['embedding']
-    except Exception as e:
-        print(f"Error generating embedding: {str(e)}")
-        return []
+
 
 def chunk_text(text: str, chunk_size: int = 1000):
+    """
+    Splits text into smaller chunks.
+    Args:
+        text (str): The text to chunk.
+        chunk_size (int): The size of each chunk.
+    Returns:
+        list: A list of text chunks.
+    """
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 
 def store_in_weaviate(document: DocumentResponse, full_text: str):
+    """
+    Stores a document in Weaviate.
+    Args:
+        document (DocumentResponse): The document metadata and content.
+        full_text (str): The full text content of the document.
+    """
     class_name = "Document"
     
     # Check if the class exists, if not create it
-    if not client.schema.exists(class_name):
-        class_obj = {
-            "class": class_name,
-            "vectorizer": "text2vec-transformers",
-            "properties": [
-                {"name": "file_name", "dataType": ["string"]},
-                {"name": "file_type", "dataType": ["string"]},
-                {"name": "industry_type", "dataType": ["string[]"]},
-                {"name": "tags", "dataType": ["string[]"]},
-                {"name": "document_type", "dataType": ["string"]},
-                {"name": "summary", "dataType": ["text"]},
-                {"name": "content", "dataType": ["text[]"]},
-                {"name": "created_at", "dataType": ["date"]},  
-                {"name": "modified_at", "dataType": ["date"]},  
-            ]
-        }
+    if not client.collections.exists(class_name):
         try:
-            client.schema.create_class(class_obj)
+            client.collections.create(
+                class_name,
+                vectorizer_config=[
+                    Configure.NamedVectors.text2vec_azure_openai(
+                    name="title_vector",
+                    source_properties=["title"],
+                    base_url= "https://ragkr.openai.azure.com/",
+                    resource_name="ragkr",
+                    deployment_id="RAG_KR_TextEmbedding_3_Large",
+                )],
+                properties = [
+                    Property(name="file_name", data_type=DataType.TEXT),
+                    Property(name="file_type", data_type=DataType.TEXT),
+                    Property(name="industry_type", data_type=DataType.TEXT_ARRAY),
+                    Property(name="tags", data_type=DataType.TEXT_ARRAY),
+                    Property(name="document_type", data_type=DataType.TEXT),
+                    Property(name="summary", data_type=DataType.TEXT),
+                    Property(name="content", data_type=DataType.TEXT_ARRAY),
+                    Property(name="created_at", data_type=DataType.DATE),
+                    Property(name="modified_at", data_type=DataType.DATE)
+                ]
+            )
+            # client.schema.create_class(class_obj)
         except Exception as e:
             print(f"Error creating Weaviate class: {str(e)}")
             raise
@@ -252,16 +398,6 @@ def store_in_weaviate(document: DocumentResponse, full_text: str):
     # Prepare the data object
     current_time = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
     
-    # data_object = {
-    #     "file_name": document.get("name", ""),  # Use dictionary keys
-    #     "file_type": document.get("file_type", ""),
-    #     "industry_type": "".join(document.get("industry", [])),  # Convert list to string
-    #     "tags": cleaned_tags,  # Use the cleaned tags
-    #     "summary": document.get("summary", ""),
-    #     "content": text_chunks,
-    #     "created_at": datetime.now().isoformat(),  # Set created_at
-    #     "modified_at": datetime.now().isoformat(),  # Set modified_at
-    # }
     data_object = {
         "file_name": document.get("name", ""),
         "file_type": document.get("file_type", ""),
@@ -276,10 +412,11 @@ def store_in_weaviate(document: DocumentResponse, full_text: str):
 
     # Store the document in Weaviate
     try:
-        result = client.data_object.create(
-            class_name=class_name,  # Explicitly use class_name as a keyword argument
-            data_object=data_object,
-            uuid=document.get("uuid")  # Use .get() to avoid KeyError
+        
+        collection = client.collections.get(class_name)
+        result = collection.data.insert(
+            properties=data_object,
+            uuid=document.get("uuid")
         )
         print(f"Document '{document.get('name')}' (ID: {document.get('uuid')}) successfully stored in Weaviate.")
         print(f"Weaviate response: {result}")
@@ -291,6 +428,11 @@ def store_in_weaviate(document: DocumentResponse, full_text: str):
         raise
 
 def extract_data_from_pdf(file_path):
+    """
+    Extracts metadata and text from a PDF file.
+    Args:
+        file_path (str): The path to the PDF file.
+    """
     from PyPDF2 import PdfReader
     reader = PdfReader(file_path)
     meta = reader.metadata
@@ -307,12 +449,22 @@ def extract_data_from_pdf(file_path):
         print(page.extract_text())
 
 class CustomPagination(PageNumberPagination):
+    """
+    Custom pagination class for controlling page size.
+    """
     page_size = 10  # Default page size
     page_size_query_param = 'page_size'  # Name of the query parameter to control page size
     max_page_size = 100  # Maximum allowed page size
 
 
 def safe_remove(file_path):
+    """
+    Safely removes a file by retrying up to 5 times in case of PermissionError.
+    Args:
+        file_path (str): The path to the file to be removed.
+    Returns:
+        bool: True if the file was successfully removed, False otherwise.
+    """
     for attempt in range(5):  # Retry up to 5 times
         try:
             if os.path.exists(file_path):
@@ -336,6 +488,13 @@ def safe_remove(file_path):
     return False
 
 def fetch_from_postgresql(uuids):
+    """
+    Fetches documents from PostgreSQL database using a list of UUIDs.
+    Args:
+        uuids (list): List of document UUIDs to fetch.
+    Returns:
+        list: A list of dictionaries containing document details.
+    """
     results = []
     for uuid in uuids:
         document = get_object_or_404(FileInformation, uuid=uuid)
@@ -352,3 +511,18 @@ def fetch_from_postgresql(uuids):
             'modified_at': document.modified_at,
         })
     return results
+
+def extract_unique_tags_from_results(results):
+    """
+    Extracts a list of unique tags from a list of document results.
+    Args:
+        results (list): A list of document details.
+    Returns:
+        list: A list of unique tags.
+    """
+    unique_tags = set()  # Using a set to store unique tags
+    for result in results:
+        tags = result.get('tags', [])
+        unique_tags.update(tags)  # Add tags to the set (duplicates are automatically removed)
+
+    return list(unique_tags)  # Convert the set back to a list

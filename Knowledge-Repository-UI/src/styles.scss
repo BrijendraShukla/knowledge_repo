@@ -103,14 +103,26 @@ textarea.knowledge-input {
   overflow: hidden;
 }
 .disable-field {
+  cursor: pointer;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
   .mdc-notched-outline__trailing {
-    border: none;
+    border-color: var(
+      --mdc-outlined-text-field-disabled-outline-color
+    ) !important;
   }
   .mdc-notched-outline__leading {
-    border: none;
+    border-color: var(
+      --mdc-outlined-text-field-disabled-outline-color
+    ) !important;
   }
   .mat-mdc-text-field-wrapper {
-    border: none;
+    border-color: var(
+      --mdc-outlined-text-field-disabled-outline-color
+    ) !important;
   }
   input {
     color: rgba(0, 0, 0, 0.38) !important;
@@ -165,4 +177,25 @@ textarea.knowledge-input {
       }
     }
   }
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/Inter-VariableFont_opsz\,wght.ttf")
+    format("truetype");
+}
+
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("./assets/fonts/IBMPlexSans-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Roboto";
+  src: url("./assets/fonts/Roboto-Regular.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url("./assets/fonts/Poppins-Regular.ttf") format("truetype");
 }

@@ -62,7 +62,11 @@
     @if (showMain) {
     <main [class.main-animation]="showMainAnimation">
       <div class="filter">
-        <app-filter [tags]="true" (formAction)="onFilter($event)"></app-filter>
+        <app-filter
+          [enableReset]="enableReset"
+          [tags]="true"
+          (formAction)="onFilter($event)"
+        ></app-filter>
       </div>
 
       <div class="data-list">

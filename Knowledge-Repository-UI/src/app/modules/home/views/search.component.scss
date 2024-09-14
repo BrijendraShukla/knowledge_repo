@@ -121,6 +121,11 @@
                 text-align: left;
                 color: #13294b;
                 margin-bottom: 4px;
+                overflow: hidden;
+                display: -webkit-box;
+                line-clamp: 1;
+                -webkit-line-clamp: 1;
+                -webkit-box-orient: vertical;
               }
               .summary {
                 font-family: Inter;
@@ -136,6 +141,7 @@
                 height: 30px;
                 overflow: hidden;
                 display: -webkit-box;
+                line-clamp: 2;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
               }

@@ -19,7 +19,15 @@ import {
 } from '@angular/material/datepicker';
 import { provideNativeDateAdapter } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
-import { debounceTime, Observable, Subject, takeUntil } from 'rxjs';
+import {
+  BehaviorSubject,
+  debounceTime,
+  distinctUntilChanged,
+  Observable,
+  startWith,
+  Subject,
+  takeUntil,
+} from 'rxjs';
 import { MasterStore } from '../../state/master.store';
 import { CommonModule } from '@angular/common';
 import {
@@ -60,8 +68,11 @@ export class FilterComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   showCalander: boolean = false;
   @Input() tags: boolean = false;
+  @Input() enableReset: BehaviorSubject<boolean> = new BehaviorSubject(false);
   @Output() formAction: EventEmitter<any> = new EventEmitter();
   @ViewChild('picker') picker!: MatDateRangePicker<any>;
+  disableFilterButton: boolean = true;
+  resetButtonClicked: boolean = false;
   previousSelectedDateRange: {
     date_range_after: Date;
     date_range_before: Date;
@@ -84,6 +95,12 @@ export class FilterComponent implements OnInit, OnDestroy {
     if (this.tags) {
       this.form.addControl('tags', this.fb.control(null));
     }
+    this.enableReset
+      .pipe(takeUntil(this._componentDistroyed))
+      .subscribe((value) => {
+        this.disableFilterButton = !value;
+        this.cdr.detectChanges();
+      });
     this._subscribeFormChange();
   }
   ngOnDestroy(): void {
@@ -188,16 +205,54 @@ export class FilterComponent implements OnInit, OnDestroy {
       document_type: [null],
     });
   }
+  resetFilter() {
+    this.form.reset();
+    this.resetButtonClicked = true;
+  }
+
+  disableReset() {
+    return (
+      !this.form.controls['date_range_after'].value &&
+      !this.form.controls['date_range_before'].value &&
+      !this.form.controls['file_type'].value &&
+      !this.form.controls['industry'].value &&
+      !this.form.controls['document_type'].value &&
+      !this.form.controls['tags']?.value &&
+      this.disableFilterButton
+    );
+  }
 
   private _subscribeFormChange() {
     this.form.valueChanges
-      .pipe(takeUntil(this._componentDistroyed), debounceTime(200))
+      .pipe(
+        takeUntil(this._componentDistroyed),
+        startWith({}),
+        debounceTime(200),
+        distinctUntilChanged((pre: any, current: any) => {
+          if (
+            pre.date_range_after == current.date_range_after &&
+            pre.date_range_before == current.date_range_before &&
+            pre.file_type == current.file_type &&
+            pre.industry == current.industry &&
+            pre.document_type == current.document_type &&
+            pre.date == current.date &&
+            pre.tags == current.tags &&
+            !this.resetButtonClicked
+          ) {
+            return true;
+          }
+
+          return false;
+        })
+      )
       .subscribe((value) => {
+        this.enableReset.next(false);
+        this.resetButtonClicked = false;
         if (value.date == 'Custom') {
           this.showCalander = true;
           this.cdr.detectChanges();
           this.picker.open();
-        } else if (this.form.valid) {
+        } else if (this.form.valid && Object.keys(value).length > 0) {
           const { date, industryDisplay, ...filterData } = value;
           filterData.date_range_before?.setHours(new Date().getHours());
           filterData.date_range_before?.setMinutes(new Date().getMinutes());

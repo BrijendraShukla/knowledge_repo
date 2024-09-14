@@ -63,17 +63,33 @@ class FileUploadSerializer(serializers.ModelSerializer):
         document_type_data = validated_data.pop('document_type', None)
 
         instance = super().update(instance, validated_data)
+
+        # Ensure tags_data is a list of individual tags
+        if isinstance(tags_data, list):
+            # If the list contains a single string, split that string
+            if len(tags_data) == 1 and isinstance(tags_data[0], str):
+                tags_data = [tag.strip() for tag in tags_data[0].split(',')]
+            else:
+                tags_data = [tag.strip() for tag in tags_data]
+        else:
+            tags_data = []
+
+        # Collect new tags
+        new_tags = set()
+        for tag in tags_data:
+            tag_obj, created = Tags.objects.get_or_create(name=tag.strip())
+            new_tags.add(tag_obj)
         
-        if tags_data:
-            old_tags = set(instance.tags.all())
-            new_tags = set(Tags.objects.get_or_create(name=tag)[0] for tag in tags_data)
-            instance.tags.set(new_tags)
-            
-            # Delete old tags that are not associated with any other records
-            for tag in old_tags - new_tags:
-                if not tag.fileinformation_set.exists():
-                    print(f"Deleting tag: {tag.name}")  # Debugging statement
-                    tag.delete()
+        # Update instance tags
+        instance.tags.set(new_tags)
+        
+        # Delete old tags that are not associated with any other records
+        old_tags = set(instance.tags.all())
+        tags_to_keep = set(new_tags)
+        for tag in old_tags - tags_to_keep:
+            if not tag.fileinformation_set.exists():
+                print(f"Deleting tag: {tag.name}")  # Debugging statement
+                tag.delete()
 
         if industry_data:
             instance.industry.clear()

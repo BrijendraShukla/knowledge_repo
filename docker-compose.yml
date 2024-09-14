@@ -1,0 +1,69 @@
+version: '3'
+services:
+  frontend:
+    image: frontend:latest
+    build:
+      context: ./Knowledge-Repository-UI
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    networks:
+      - app-network
+
+  backend:
+    image: backend:latest
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - weaviate
+    command: >
+      sh -c "python manage.py makemigrations repository && \
+       python manage.py migrate repository && \
+       python manage.py runserver 0.0.0.0:8000"
+
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:16.3
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "172.19.62.144:5432:5432"
+    networks:
+      - app-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.26.3
+    restart: on-failure:0
+    ports:
+      - "172.19.62.144:8080:8080"
+      - "172.19.62.144:50051:50051"
+    environment:
+      QUERY_DEFAULTS_LIMIT: 20
+      AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
+      PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+      ENABLE_MODULES: text2vec-openai
+      DEFAULT_VECTORIZER_MODULE: text2vec-openai
+      AZURE_APIKEY: 74559fd47b564d57bca2028db2e6c6a0
+      CLUSTER_HOSTNAME: 'node1'
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+  weaviate_data:
+
+networks:
+  app-network:
