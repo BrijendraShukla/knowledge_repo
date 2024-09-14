@@ -10,7 +10,7 @@ from weaviate.classes.query import MetadataQuery
 
 # Define the local and remote URLs
 LOCAL_URL = "127.0.0.1"
-REMOTE_URL = "172.19.62.144"
+REMOTE_URL = "172.31.75.108"
 
 # Function to check if the app is running in a local environment
 def is_local_environment():

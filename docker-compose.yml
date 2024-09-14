@@ -35,7 +35,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
     ports:
-      - "172.19.62.144:5432:5432"
+      - "172.31.75.108:5432:5432"
     networks:
       - app-network
     volumes:
@@ -46,8 +46,8 @@ services:
     image: cr.weaviate.io/semitechnologies/weaviate:1.26.3
     restart: on-failure:0
     ports:
-      - "172.19.62.144:8080:8080"
-      - "172.19.62.144:50051:50051"
+      - "172.31.75.108:8080:8080"
+      - "172.31.75.108:50051:50051"
     environment:
       QUERY_DEFAULTS_LIMIT: 20
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: 'true'
