@@ -4,6 +4,7 @@ __pycache__/
 migrations/
 .vscode/
 venv/
+env/
 *.pyc
 *.log
 *.tmp

@@ -1,0 +1,103 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+      # Checkout the code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up Docker
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install docker.io docker-compose -y
+
+      # Build the frontend image
+      - name: Build Angular frontend
+        run: |
+          docker build -t frontend-app:latest ./frontend
+
+      # Build the backend image
+      - name: Build Django backend
+        run: |
+          docker build -t backend-app:latest ./backend
+
+      # Save Docker images as artifacts (frontend & backend)
+      - name: Save frontend image
+        run: |
+          docker save frontend-app:latest | gzip > frontend-app.tar.gz
+        continue-on-error: true
+        if: always()
+      - name: Save backend image
+        run: |
+          docker save backend-app:latest | gzip > backend-app.tar.gz
+        continue-on-error: true
+        if: always()
+
+      - name: Upload Docker images as artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: frontend-app
+          path: frontend-app.tar.gz
+      - name: Upload backend image as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: backend-app
+          path: backend-app.tar.gz
+
+      # Start services using Docker Compose
+      - name: Start services with Docker Compose
+        run: |
+          docker-compose up -d
+
+      # Run database migrations
+      - name: Apply Django migrations
+        run: |
+          docker-compose exec backend python manage.py migrate
+
+      # Run backend tests
+      - name: Run backend tests
+        run: |
+          docker-compose exec backend python manage.py test
+
+      # Run frontend tests
+      - name: Run frontend tests
+        run: |
+          docker-compose exec frontend npm run test
+
+  # Restore Docker images from artifacts for subsequent runs to save build time
+  load-images:
+    runs-on: self-hosted
+    needs: build-and-deploy
+    steps:
+      - name: Download frontend image
+        uses: actions/download-artifact@v2
+        with:
+          name: frontend-app
+      - name: Download backend image
+        uses: actions/download-artifact@v2
+        with:
+          name: backend-app
+
+      - name: Load frontend image
+        run: |
+          gunzip -c frontend-app.tar.gz | docker load
+      - name: Load backend image
+        run: |
+          gunzip -c backend-app.tar.gz | docker load
+
+      # Start services with loaded images
+      - name: Start services
+        run: |
+          docker-compose up -d
