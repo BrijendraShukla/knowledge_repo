@@ -20,12 +20,12 @@ jobs:
       # Build the frontend image
       - name: Build Angular frontend
         run: |
-          docker build -t frontend-app:latest ./frontend
+          docker build -t frontend-app:latest ./Knowledge-Repository-UI
 
       # Build the backend image
       - name: Build Django backend
         run: |
-          docker build -t backend-app:latest ./backend
+          docker build -t backend-app:latest ./Backend
 
       # Save Docker images as artifacts (frontend & backend)
       - name: Save frontend image
