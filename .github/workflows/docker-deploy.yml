@@ -17,12 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Set up Docker
-      - name: Set up Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get install docker.io docker-compose -y
-
       # Build the frontend image
       - name: Build Angular frontend
         run: |
@@ -76,7 +70,6 @@ jobs:
         run: |
           docker-compose exec frontend npm run test
 
-  # Restore Docker images from artifacts for subsequent runs to save build time
   load-images:
     runs-on: self-hosted
     needs: build-and-deploy
