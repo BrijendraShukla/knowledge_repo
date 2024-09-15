@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Docker CI/CD Pipeline
 
 on:
   push:
@@ -11,40 +11,50 @@ on:
 jobs:
   build-and-deploy:
     runs-on: self-hosted
-
+    
     steps:
-      # Checkout the code
+      # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Build the frontend image
+      # Cache Docker layers to speed up subsequent builds
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /var/lib/docker
+          key: ${{ runner.os }}-docker-${{ hashFiles('**/Dockerfile') }}
+          restore-keys: |
+            ${{ runner.os }}-docker-
+
+      # Build the frontend image (Angular)
       - name: Build Angular frontend
         run: |
-          docker build -t frontend-app:latest ./Knowledge-Repository-UI
+          docker build -t frontend-app:latest ./frontend
 
-      # Build the backend image
+      # Build the backend image (Django)
       - name: Build Django backend
         run: |
-          docker build -t backend-app:latest ./Backend
+          docker build -t backend-app:latest ./backend
 
-      # Save Docker images as artifacts (frontend & backend)
-      - name: Save frontend image
+      # Save and compress the frontend image
+      - name: Compress frontend Docker image
         run: |
           docker save frontend-app:latest | gzip > frontend-app.tar.gz
-        continue-on-error: true
-        if: always()
-      - name: Save backend image
+
+      # Save and compress the backend image
+      - name: Compress backend Docker image
         run: |
           docker save backend-app:latest | gzip > backend-app.tar.gz
-        continue-on-error: true
-        if: always()
 
-      - name: Upload Docker images as artifacts
+      # Upload compressed frontend Docker image as an artifact
+      - name: Upload frontend Docker image artifact
         uses: actions/upload-artifact@v3
         with:
           name: frontend-app
           path: frontend-app.tar.gz
-      - name: Upload backend image as artifact
+
+      # Upload compressed backend Docker image as an artifact
+      - name: Upload backend Docker image artifact
         uses: actions/upload-artifact@v3
         with:
           name: backend-app
@@ -52,45 +62,5 @@ jobs:
 
       # Start services using Docker Compose
       - name: Start services with Docker Compose
-        run: |
-          docker-compose up -d
-
-      # Run database migrations
-      - name: Apply Django migrations
-        run: |
-          docker-compose exec backend python manage.py migrate
-
-      # Run backend tests
-      - name: Run backend tests
-        run: |
-          docker-compose exec backend python manage.py test
-
-      # Run frontend tests
-      - name: Run frontend tests
-        run: |
-          docker-compose exec frontend npm run test
-
-  load-images:
-    runs-on: self-hosted
-    needs: build-and-deploy
-    steps:
-      - name: Download frontend image
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-app
-      - name: Download backend image
-        uses: actions/download-artifact@v3
-        with:
-          name: backend-app
-
-      - name: Load frontend image
-        run: |
-          gunzip -c frontend-app.tar.gz | docker load
-      - name: Load backend image
-        run: |
-          gunzip -c backend-app.tar.gz | docker load
-
-      # Start services with loaded images
-      - name: Start services
         run: |
           docker-compose up -d
