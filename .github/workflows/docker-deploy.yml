@@ -15,7 +15,7 @@ jobs:
     steps:
       # Checkout the code
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # Set up Docker
       - name: Set up Docker
@@ -46,12 +46,12 @@ jobs:
         if: always()
 
       - name: Upload Docker images as artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: frontend-app
           path: frontend-app.tar.gz
       - name: Upload backend image as artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: backend-app
           path: backend-app.tar.gz
@@ -82,11 +82,11 @@ jobs:
     needs: build-and-deploy
     steps:
       - name: Download frontend image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: frontend-app
       - name: Download backend image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: backend-app
 
