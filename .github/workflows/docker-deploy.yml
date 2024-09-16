@@ -29,36 +29,12 @@ jobs:
       # Build the frontend image (Angular)
       - name: Build Angular frontend
         run: |
-          docker build -t frontend-app:latest ./Knowledge-Repository-UI
+          docker build -t frontend-app:latest ./frontend
 
       # Build the backend image (Django)
       - name: Build Django backend
         run: |
-          docker build -t backend-app:latest ./Backend
-
-      # Save and compress the frontend image
-      - name: Compress frontend Docker image
-        run: |
-          docker save frontend-app:latest | gzip > frontend-app.tar.gz
-
-      # Save and compress the backend image
-      - name: Compress backend Docker image
-        run: |
-          docker save backend-app:latest | gzip > backend-app.tar.gz
-
-      # Upload compressed frontend Docker image as an artifact
-      - name: Upload frontend Docker image artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: frontend-app
-          path: frontend-app.tar.gz
-
-      # Upload compressed backend Docker image as an artifact
-      - name: Upload backend Docker image artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: backend-app
-          path: backend-app.tar.gz
+          docker build -t backend-app:latest ./backend
 
       # Start services using Docker Compose
       - name: Start services with Docker Compose
