@@ -29,12 +29,12 @@ jobs:
       # Build the frontend image (Angular)
       - name: Build Angular frontend
         run: |
-          docker build -t frontend-app:latest ./frontend
+          docker build -t frontend-app:latest ./Knowledge-Repository-UI
 
       # Build the backend image (Django)
       - name: Build Django backend
         run: |
-          docker build -t backend-app:latest ./backend
+          docker build -t backend-app:latest ./Backend
 
       # Start services using Docker Compose
       - name: Start services with Docker Compose
